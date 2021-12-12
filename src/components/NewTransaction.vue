@@ -122,34 +122,31 @@ export default {
                             });
                             this.$router.go();
                         }
-                        var msn2user = "";
                         if (
                             msnError.includes(
                                 "El monto origen debe ser mayor a cero"
                             )
                         ) {
-                            msn2user =
-                                "El valor a transar debe ser mayor a cero.";
+                            alert("El valor a transar debe ser mayor a cero.");
                         }
                         if (
                             msnError.includes(
                                 "no posee fondos necesarios en USD"
                             )
                         ) {
-                            msn2user = "No posee fondos necesarios en USD.";
+                            alert(
+                                "El ususario no tiene dinero suficiente en la cuenta forex"
+                            );
                         }
-                        Swal.close();
-                        Swal.fire({
-                            icon: "error",
-                            title: "Oops...",
-                            text: msn2user,
-                            showClass: {
-                                popup: "animate__animated animate__fadeInDown",
-                            },
-                            hideClass: {
-                                popup: "animate__animated animate__fadeOutUp",
-                            },
-                        });
+                        if (
+                            msnError.includes(
+                                "Error: Dinero insuficiente en la cuenta"
+                            )
+                        ) {
+                            alert(
+                                "El ususario no tiene dinero suficiente en la cuenta bancaria"
+                            );
+                        }
                     });
             }
         },
