@@ -1,150 +1,162 @@
 <template>
-
-    <div class="signUp_user">
-        <div class="container_signUp_user">
-            <h2>Registrarse</h2>
-
-            <form v-on:submit.prevent="processSignUp" >
-                <input type="text" v-model="user.username" placeholder="Usuario">
-                <br>
-                
-                <input type="password" v-model="user.password" placeholder="Contraseña">
-                <br>
-                
-                <input type="text" v-model="user.name" placeholder="Nombre">
-                <br>
-
-                <input type="email" v-model="user.email" placeholder="Correo">
-                <br>
-
-                <input type="number" v-model="user.balance" placeholder="Saldo Inicial">
-                <br>
-
-                <button type="submit">Registrarse</button>
-            </form>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-12 col-sm-6 col-md-4 mb-2">
+                <label for="first_name" >Nombre</label>
+                <div>
+                    <InputText 
+                    id="first_name" 
+                    type="text" 
+                    v-model="first_name"/>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 mb-2">
+                <label for="last_name" >Apellido</label>
+                <div>
+                    <InputText 
+                    id="last_name" 
+                    type="text" 
+                    v-model="last_name"/>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 mb-2">
+                <label for="username" >Nombre de usuario</label>
+                <div>
+                    <InputText 
+                    id="username" 
+                    type="text" 
+                    v-model="username"/>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 mb-2">
+                <label for="email">Correo electrónico</label>
+                <div>
+                    <InputText 
+                    id="email" 
+                    type="email" 
+                    v-model="email"/>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 mb-2">
+                <label for="password">Contraseña</label>
+                <div>
+                    <InputText 
+                    id="password" 
+                    type="password" 
+                    v-model="password"/>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 mb-2">
+                <label for="balance" >Depósito</label>
+                <div>
+                    <InputNumber 
+                    v-model="balance" 
+                    mode="currency" 
+                    currency="COP" 
+                    locale="es-CO"/>
+                </div>
+            </div>
         </div>
-
+        <Button label="Registrarme" @click="signUp()"/>
+        <Button 
+        label="Tienes usuario? Inicia sesión!" 
+        class="p-button-text"
+        v-on:click="goToSignIn()"/>
     </div>
-
 </template>
-
 
 <script>
 import gql from "graphql-tag";
+import Swal from "sweetalert2";
+import InputText from 'primevue/inputtext';
+import InputNumber from 'primevue/inputnumber';
+import Button from 'primevue/button';
 
 export default {
-    name: "SignUp",
-
-    data: function() {
+    name: 'SignUp',
+    components: {
+        InputText,
+        Button,
+        InputNumber
+    },
+    data() {
         return {
-        user: {
-            username: "",
-            password: "",
-            name: "",
-            email: "",
-            balance: 0,
+            username: '',
+            first_name: '',
+            last_name: '',
+            email: '',
+            password: '',
+            balance: '',
+        }
+    },
+    methods: {
+        signUp() {
+            console.log(this.balance);
+            Swal.fire({
+                title: 'Creando usuario',
+                html: 'Espera un momento mientras creamos tu cuenta...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }   
+            });
+            this.$apollo.mutate({
+                mutation: gql`
+                mutation 
+                (
+                $username: String!, 
+                $firstName: String!, 
+                $lastName: String!, 
+                $email: String!, 
+                $password: String!, 
+                $balance: Int!) {
+                newUserWithAccount(
+                    username: $username, 
+                    first_name: $firstName, 
+                    last_name: $lastName, 
+                    email: $email, 
+                    password: $password, 
+                    balance: $balance) {
+                        id
+                        username
+                        first_name
+                        last_name
+                        email
+                        balance
+                    }
+                }
+                `,
+                variables: {
+                    username: this.username, 
+                    firstName: this.first_name,
+                    lastName: this.last_name,
+                    email: this.email,
+                    password: this.password,
+                    balance: this.balance
+                }
+            }).then(response => {
+                console.log(response)
+                Swal.close();
+                Swal.fire(
+                'Usuario creado',
+                `El usuario ${response.data.newUserWithAccount.username} ha sido creado satisfactoriamente`,
+                'success'
+                )
+                this.goToSignIn();
+            }).catch(e => {
+                Swal.close();
+                console.log(JSON.stringify(e, null, 2));
+            });
         },
-        };
-    },
-
-  methods: {
-    processSignUp: async function() {
-      await this.$apollo
-        .mutate({
-          mutation: gql`
-            mutation($userInput: SignUpInput!) {
-              signUpUser(userInput: $userInput) {
-                refresh
-                access
-              }
-            }
-          `,
-          variables: {
-            userInput: this.user,
-          },
-        })
-        .then((result) => {
-          let dataLogIn = {
-            username: this.user.username,
-            token_access: result.data.signUpUser.access,
-            token_refresh: result.data.signUpUser.refresh,
-          };
-
-          this.$emit("completedSignUp", dataLogIn);
-        })
-        .catch((error) => {
-          alert("ERROR: Fallo en el registro.");
-        });
-    },
-
-  },
+        goToSignIn() {
+            this.$router.push({ name: 'signIn' });
+        }
+    }
 }
 </script>
 
-
-<style>
-
-    .signUp_user{
-        margin: 0;
-        padding: 0%;
-        height: 100%;
-        width: 100%;
-    
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .container_signUp_user {
-        border: 3px solid  #283747;
-        border-radius: 10px;
-        width: 25%;
-        height: 60%;
-        
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .signUp_user h2{
-        color: #283747;
-
-    }
-
-    .signUp_user form{
-        width: 70%;
-        
-    }
-
-    .signUp_user input{
-        height: 40px;
-        width: 100%;
-
-        box-sizing: border-box;
-        padding: 10px 20px;
-        margin: 5px 0;
-
-        border: 1px solid #283747;
-    }
-
-    .signUp_user button{
-        width: 100%;
-        height: 40px;
-
-        color: #E5E7E9;
-        background: #283747;
-        border: 1px solid #E5E7E9;
-
-        border-radius: 5px;
-        padding: 10px 25px;
-        margin: 5px 0 25px 0;
-    }
-
-    .signUp_user button:hover{
-        color: #E5E7E9;
-        background: crimson;
-        border: 1px solid #283747;
-    }
-
+<style scoped>
+.p-inputtext {
+    width: 100%;
+}
 </style>
